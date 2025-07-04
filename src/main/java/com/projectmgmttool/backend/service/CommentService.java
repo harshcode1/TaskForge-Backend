@@ -30,10 +30,10 @@ public class CommentService {
 
     public Comment addComment(CommentRequest request, String authorEmail) {
         Task task = taskRepository.findById(request.getTaskId())
-                .orElseThrow(() -> new CustomApiException("Task not found"));
+                .orElseThrow(() -> new CustomApiException("Task not found", 404));
 
         User user = userRepository.findByEmail(authorEmail)
-                .orElseThrow(() -> new CustomApiException("User not found"));
+                .orElseThrow(() -> new CustomApiException("User not found", 404));
 
         Comment comment = new Comment();
         comment.setContent(request.getText());
@@ -47,7 +47,7 @@ public class CommentService {
     public List<Comment> getCommentsForTask(UUID taskId, String userEmail) {
         // First check if the task exists
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new CustomApiException("Task not found"));
+                .orElseThrow(() -> new CustomApiException("Task not found", 404));
 
         // Verify user is authorized to view comments (must be a member of the project)
         Project project = task.getProject();
@@ -62,7 +62,7 @@ public class CommentService {
                     .orElse(false);
 
             if (!isMember) {
-                throw new CustomApiException("You are not authorized to view comments for this task");
+                throw new CustomApiException("You are not authorized to view comments for this task", 403);
             }
         }
 
@@ -71,11 +71,11 @@ public class CommentService {
 
     public void deleteComment(UUID commentId, String userEmail) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new CustomApiException("Comment not found"));
+                .orElseThrow(() -> new CustomApiException("Comment not found", 404));
 
         // Only the author of the comment can delete it
         if (!comment.getAuthor().getEmail().equals(userEmail)) {
-            throw new CustomApiException("You are not authorized to delete this comment");
+            throw new CustomApiException("You are not authorized to delete this comment", 403);
         }
 
         commentRepository.delete(comment);

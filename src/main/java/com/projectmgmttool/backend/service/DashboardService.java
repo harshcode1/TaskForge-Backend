@@ -33,14 +33,14 @@ public class DashboardService {
     public DashboardResponse getDashboardData(UUID projectId, String userEmail) {
         // Find the project
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new CustomApiException("Project not found"));
+                .orElseThrow(() -> new CustomApiException("Project not found", 404));
 
         // Check if user is authorized to view project dashboard
         boolean isOwner = project.getOwner().getEmail().equals(userEmail);
         boolean isMember = projectMemberRepository.existsByProjectIdAndUserEmail(projectId, userEmail);
 
         if (!isOwner && !isMember) {
-            throw new CustomApiException("You are not authorized to view this project's dashboard");
+            throw new CustomApiException("You are not authorized to view this project's dashboard", 403);
         }
 
         // Get all tasks for the project
@@ -68,7 +68,7 @@ public class DashboardService {
     public DashboardResponse getUserDashboardData(String userEmail) {
         // Find the user
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new CustomApiException("User not found"));
+                .orElseThrow(() -> new CustomApiException("User not found", 404));
 
         // Get tasks assigned to the user
         List<Task> assignedTasks = taskRepository.findByAssigneeEmail(userEmail);

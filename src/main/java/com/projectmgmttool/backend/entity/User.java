@@ -1,5 +1,6 @@
 package com.projectmgmttool.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.projectmgmttool.backend.entity.enums.Role;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -27,6 +28,7 @@ public class User {
 
     // Relations
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<Project> ownedProjects;
 
     @OneToMany(mappedBy = "assignee")

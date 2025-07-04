@@ -2,12 +2,14 @@ package com.projectmgmttool.backend.controller;
 
 import com.projectmgmttool.backend.entity.Task;
 import com.projectmgmttool.backend.dto.TaskRequest;
+import com.projectmgmttool.backend.dto.TaskDTO;
 import com.projectmgmttool.backend.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,7 @@ import java.util.*;
 import java.util.Optional;
 import java.util.UUID;
 
+@Tag(name = "Tasks", description = "Endpoints for task management")
 @RestController
 @RequestMapping("/api/tasks")
 public class TaskController {
@@ -34,11 +37,23 @@ public class TaskController {
             content = @Content(mediaType = "application/json"))
     })
     @PostMapping
-    public ResponseEntity<Task> createTask(
+    public ResponseEntity<TaskDTO> createTask(
             @Valid @RequestBody TaskRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
+
         Task created = taskService.createTask(request, userDetails.getUsername());
-        return ResponseEntity.ok(created);
+
+        TaskDTO response = new TaskDTO(
+                created.getId(),
+                created.getTitle(),
+                created.getDescription(),
+                created.getPriority(),
+                created.getStatus(),
+                created.getCreatedAt(),
+                created.getProject().getId()
+        );
+
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Get tasks for a project", description = "Retrieves tasks for a specific project, optionally filtered by status.")
@@ -51,8 +66,8 @@ public class TaskController {
     @GetMapping("/project/{projectId}")
     public ResponseEntity<List<Task>> getTasks(
             @PathVariable UUID projectId,
-            @RequestParam Optional<String> status) {
-        List<Task> tasks = taskService.getTasksForProject(projectId, status);
+            @RequestParam(required = false) String status) {
+        List<Task> tasks = taskService.getTasksForProject(projectId, Optional.ofNullable(status));
         return ResponseEntity.ok(tasks);
     }
 
@@ -72,6 +87,12 @@ public class TaskController {
         return ResponseEntity.ok(updated);
     }
 
+    @Operation(summary = "Delete a task", description = "Deletes a task by its ID.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", description = "Task deleted successfully"),
+        @ApiResponse(responseCode = "404", description = "Task not found",
+            content = @Content(mediaType = "application/json"))
+    })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(
             @PathVariable UUID id,

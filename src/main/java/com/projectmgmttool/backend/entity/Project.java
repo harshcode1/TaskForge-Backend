@@ -1,5 +1,7 @@
 package com.projectmgmttool.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,15 +21,18 @@ public class Project {
 
     @ManyToOne
     @JoinColumn(name = "owner_id")
+    @JsonBackReference
     private User owner;
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
     // Relations
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<Task> tasks;
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<ProjectMember> members;
 
     // Constructors

@@ -1,5 +1,6 @@
 package com.projectmgmttool.backend.dto;
 
+import com.projectmgmttool.backend.entity.enums.Priority;
 import jakarta.validation.constraints.*;
 
 import java.util.Date;
@@ -24,14 +25,18 @@ public class TaskRequest {
     @Pattern(regexp = "^(TODO|IN_PROGRESS|DONE)$", message = "Status must be TODO, IN_PROGRESS, or DONE")
     private String status;
 
+    @NotNull(message = "Priority is required")
+    private Priority priority;
+
     private Date dueDate;
 
-    public TaskRequest(String title, String description, UUID projectId, String assigneeEmail, String status) {
+    public TaskRequest(String title, String description, UUID projectId, String assigneeEmail, String status, Priority priority) {
         this.title = title;
         this.description = description;
         this.projectId = projectId;
         this.assigneeEmail = assigneeEmail;
         this.status = status;
+        this.priority = priority;
     }
 
     public void setTitle(String title) {
@@ -54,6 +59,10 @@ public class TaskRequest {
         this.status = status;
     }
 
+    public void setPriority(Priority priority) {
+        this.priority = priority;
+    }
+
     public void setDueDate(Date dueDate) {
         this.dueDate = dueDate;
     }
@@ -72,6 +81,9 @@ public class TaskRequest {
     }
     public String getStatus() {
         return status;
+    }
+    public Priority getPriority() {
+        return priority;
     }
     public Date getDueDate() {
         return dueDate;

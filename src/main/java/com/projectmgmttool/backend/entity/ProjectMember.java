@@ -1,5 +1,6 @@
 package com.projectmgmttool.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.projectmgmttool.backend.entity.enums.Role;
 import jakarta.persistence.*;
 
@@ -17,6 +18,7 @@ public class ProjectMember {
     private User user;
 
     @ManyToOne
+    @JsonBackReference
     private Project project;
 
     private LocalDateTime joinedAt = LocalDateTime.now();

@@ -9,7 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 public class ProjectService {
@@ -22,30 +23,30 @@ public class ProjectService {
 
     public Project createProject(String name, String description, String ownerEmail) {
         User owner = userRepository.findByEmail(ownerEmail)
-                .orElseThrow(() -> new CustomApiException("User not found"));
+                .orElseThrow(() -> new CustomApiException("User not found", 404));
 
         Project project = new Project();
         project.setName(name);
         project.setDescription(description);
-        project.setOwner(owner);
+        project.setOwner(owner); // Set the user as the owner of the project
         project.setCreatedAt(LocalDateTime.now());
 
         return projectRepository.save(project);
     }
 
-    public List<Project> getProjectsForUser(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomApiException("User not found"));
+    public List<Project> getProjectsForUser(String username) {
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new CustomApiException("User not found", 404));
 
-        return projectRepository.findByOwnerId(user.getId());
+        return user.getOwnedProjects();
     }
 
     public Project updateProject(UUID projectId, String name, String description, String requesterEmail) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new CustomApiException("Project not found"));
+                .orElseThrow(() -> new CustomApiException("Project not found", 404));
 
         if (!project.getOwner().getEmail().equals(requesterEmail)) {
-            throw new CustomApiException("Only the owner can update the project");
+            throw new CustomApiException("Only the owner can update the project", 403);
         }
 
         project.setName(name);
@@ -55,10 +56,10 @@ public class ProjectService {
 
     public void deleteProject(UUID projectId, String requesterEmail) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new CustomApiException("Project not found"));
+                .orElseThrow(() -> new CustomApiException("Project not found", 404));
 
         if (!project.getOwner().getEmail().equals(requesterEmail)) {
-            throw new CustomApiException("Only the owner can delete the project");
+            throw new CustomApiException("Only the owner can delete the project", 403);
         }
 
         projectRepository.delete(project);

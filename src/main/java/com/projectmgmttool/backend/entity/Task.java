@@ -1,5 +1,7 @@
 package com.projectmgmttool.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.projectmgmttool.backend.entity.enums.Priority;
 import com.projectmgmttool.backend.entity.enums.TaskStatus;
 import jakarta.persistence.*;
@@ -30,6 +32,7 @@ public class Task {
 
     @ManyToOne
     @JoinColumn(name = "project_id")
+    @JsonBackReference
     private Project project;
 
     @ManyToOne
@@ -39,6 +42,7 @@ public class Task {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<Comment> comments;
 
     // Constructors

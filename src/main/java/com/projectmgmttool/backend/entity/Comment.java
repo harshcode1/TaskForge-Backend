@@ -1,5 +1,6 @@
 package com.projectmgmttool.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -20,6 +21,7 @@ public class Comment {
 
     @ManyToOne
     @JoinColumn(name = "task_id")
+    @JsonBackReference
     private Task task;
 
     private LocalDateTime createdAt = LocalDateTime.now();
