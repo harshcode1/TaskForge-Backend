@@ -1,5 +1,6 @@
 package com.projectmgmttool.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.projectmgmttool.backend.entity.enums.Role;
 import jakarta.persistence.*;
@@ -32,6 +33,7 @@ public class User {
     private List<Project> ownedProjects;
 
     @OneToMany(mappedBy = "assignee")
+    @JsonBackReference
     private List<Task> assignedTasks;
 
     // Constructors

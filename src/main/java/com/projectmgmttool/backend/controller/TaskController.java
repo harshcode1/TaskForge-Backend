@@ -4,6 +4,7 @@ import com.projectmgmttool.backend.entity.Task;
 import com.projectmgmttool.backend.dto.TaskRequest;
 import com.projectmgmttool.backend.dto.TaskDTO;
 import com.projectmgmttool.backend.service.TaskService;
+import com.projectmgmttool.backend.repository.TaskRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -28,6 +29,9 @@ public class TaskController {
 
     @Autowired
     private TaskService taskService;
+
+    @Autowired
+    private TaskRepository taskRepository;
 
     @Operation(summary = "Create a new task", description = "Creates a new task within a project.")
     @ApiResponses(value = {
@@ -99,5 +103,12 @@ public class TaskController {
             @AuthenticationPrincipal UserDetails userDetails) {
         taskService.deleteTask(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Task>> getTasksForUser(@AuthenticationPrincipal UserDetails userDetails) {
+        UUID userId = UUID.fromString(userDetails.getUsername());
+        List<Task> tasks = taskRepository.findTasksAssignedToUser(userId);
+        return ResponseEntity.ok(tasks);
     }
 }

@@ -6,6 +6,7 @@ import com.projectmgmttool.backend.dto.ProjectRequest;
 import com.projectmgmttool.backend.dto.ProjectResponseDTO;
 import com.projectmgmttool.backend.dto.UserDTO;
 import com.projectmgmttool.backend.service.ProjectService;
+import com.projectmgmttool.backend.repository.ProjectRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -28,6 +29,9 @@ public class ProjectController {
 
     @Autowired
     private ProjectService projectService;
+
+    @Autowired
+    private ProjectRepository projectRepository;
 
     @Operation(summary = "Create a new project", description = "Creates a new project with the provided details.")
     @ApiResponses(value = {
@@ -70,6 +74,39 @@ public class ProjectController {
     public ResponseEntity<List<Project>> getUserProjects(@AuthenticationPrincipal UserDetails userDetails) {
         List<Project> projects = projectService.getProjectsForUser(userDetails.getUsername());
         return ResponseEntity.ok(projects);
+    }
+
+    @Operation(summary = "Get project by ID", description = "Retrieves a specific project by its ID.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Project retrieved successfully",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProjectResponseDTO.class))),
+        @ApiResponse(responseCode = "404", description = "Project not found",
+            content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", description = "Access denied",
+            content = @Content(mediaType = "application/json"))
+    })
+    @GetMapping("/{id}")
+    public ResponseEntity<ProjectResponseDTO> getProjectById(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Project project = projectService.getProjectById(id, userDetails.getUsername());
+
+        UserDTO owner = new UserDTO(
+                project.getOwner().getId(),
+                project.getOwner().getName(),
+                project.getOwner().getEmail()
+        );
+
+        ProjectResponseDTO response = new ProjectResponseDTO(
+                project.getId(),
+                project.getName(),
+                project.getDescription(),
+                project.getCreatedAt(),
+                owner
+        );
+
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Update a project", description = "Updates a project by its ID.")

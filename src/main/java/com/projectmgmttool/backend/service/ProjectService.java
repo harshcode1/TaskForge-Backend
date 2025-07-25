@@ -41,6 +41,18 @@ public class ProjectService {
         return user.getOwnedProjects();
     }
 
+    public Project getProjectById(UUID projectId, String requesterEmail) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new CustomApiException("Project not found", 404));
+
+        // Check if the requester is the owner of the project or has access to it
+        if (!project.getOwner().getEmail().equals(requesterEmail)) {
+            throw new CustomApiException("Access denied - you don't have permission to view this project", 403);
+        }
+
+        return project;
+    }
+
     public Project updateProject(UUID projectId, String name, String description, String requesterEmail) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomApiException("Project not found", 404));

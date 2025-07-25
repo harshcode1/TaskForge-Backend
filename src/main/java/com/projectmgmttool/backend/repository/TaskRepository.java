@@ -22,4 +22,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     List<Task> findByDueDateBetweenAndStatusIn(@Param("startDate") LocalDate startDate,
                                                @Param("endDate") LocalDate endDate,
                                                @Param("statuses") List<TaskStatus> statuses);
+
+    @Query("SELECT t FROM Task t WHERE t.assignee.id = :userId")
+    List<Task> findTasksAssignedToUser(@Param("userId") UUID userId);
 }
