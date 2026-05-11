@@ -17,7 +17,15 @@ public class CommentRequest {
         return taskId;
     }
 
+    public void setTaskId(UUID taskId) {
+        this.taskId = taskId;
+    }
+
     public String getText() {
         return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
     }
 }

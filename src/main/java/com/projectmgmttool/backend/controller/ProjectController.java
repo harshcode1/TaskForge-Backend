@@ -71,9 +71,14 @@ public class ProjectController {
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = Project.class)))
     })
     @GetMapping
-    public ResponseEntity<List<Project>> getUserProjects(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<List<ProjectResponseDTO>> getUserProjects(@AuthenticationPrincipal UserDetails userDetails) {
         List<Project> projects = projectService.getProjectsForUser(userDetails.getUsername());
-        return ResponseEntity.ok(projects);
+        List<ProjectResponseDTO> response = projects.stream()
+                .map(p -> new ProjectResponseDTO(
+                        p.getId(), p.getName(), p.getDescription(), p.getCreatedAt(),
+                        new UserDTO(p.getOwner().getId(), p.getOwner().getName(), p.getOwner().getEmail())))
+                .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Get project by ID", description = "Retrieves a specific project by its ID.")
@@ -117,13 +122,16 @@ public class ProjectController {
             content = @Content(mediaType = "application/json"))
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Project> updateProject(
+    public ResponseEntity<ProjectResponseDTO> updateProject(
             @PathVariable UUID id,
             @Valid @RequestBody ProjectRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         Project updated = projectService.updateProject(id, request.getName(), request.getDescription(), userDetails.getUsername());
-        return ResponseEntity.ok(updated);
+        UserDTO owner = new UserDTO(
+                updated.getOwner().getId(), updated.getOwner().getName(), updated.getOwner().getEmail());
+        return ResponseEntity.ok(new ProjectResponseDTO(
+                updated.getId(), updated.getName(), updated.getDescription(), updated.getCreatedAt(), owner));
     }
 
     @Operation(summary = "Delete project", description = "Delete a specific project")
