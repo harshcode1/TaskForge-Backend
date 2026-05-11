@@ -1,7 +1,6 @@
 package com.projectmgmttool.backend.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.projectmgmttool.backend.entity.enums.Role;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -20,6 +19,7 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @JsonIgnore
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -29,11 +29,11 @@ public class User {
 
     // Relations
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
-    @JsonManagedReference
+    @JsonIgnore
     private List<Project> ownedProjects;
 
     @OneToMany(mappedBy = "assignee")
-    @JsonBackReference
+    @JsonIgnore
     private List<Task> assignedTasks;
 
     // Constructors

@@ -3,6 +3,7 @@ package com.projectmgmttool.backend.service;
 import com.projectmgmttool.backend.dto.AuthRequest;
 import com.projectmgmttool.backend.dto.AuthResponse;
 import com.projectmgmttool.backend.dto.RegisterRequest;
+import com.projectmgmttool.backend.exception.CustomApiException;
 import com.projectmgmttool.backend.repository.UserRepository;
 import com.projectmgmttool.backend.security.JwtUtil;
 import com.projectmgmttool.backend.entity.User;
@@ -30,7 +31,7 @@ public class AuthService {
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already registered");
+            throw new CustomApiException("Email already registered", 409);
         }
 
         User user = new User();

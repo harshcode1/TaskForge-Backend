@@ -38,15 +38,18 @@ public class ProjectService {
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new CustomApiException("User not found", 404));
 
-        return user.getOwnedProjects();
+        return projectRepository.findAllProjectsVisibleToUser(user.getId());
     }
 
     public Project getProjectById(UUID projectId, String requesterEmail) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomApiException("Project not found", 404));
 
-        // Check if the requester is the owner of the project or has access to it
-        if (!project.getOwner().getEmail().equals(requesterEmail)) {
+        boolean isOwner = project.getOwner().getEmail().equals(requesterEmail);
+        boolean isMember = project.getMembers().stream()
+                .anyMatch(m -> m.getUser().getEmail().equals(requesterEmail));
+
+        if (!isOwner && !isMember) {
             throw new CustomApiException("Access denied - you don't have permission to view this project", 403);
         }
 

@@ -42,15 +42,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomApiException.class)
     public ResponseEntity<ErrorResponse> handleCustomApiException(CustomApiException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.resolve(ex.getErrorCode());
+        if (status == null) status = HttpStatus.BAD_REQUEST;
+
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .timestamp(System.currentTimeMillis())
-                .status(HttpStatus.BAD_REQUEST.value())
-                .error("Business Logic Error")
+                .status(status.value())
+                .error(status.getReasonPhrase())
                 .message(ex.getMessage())
                 .path(request.getDescription(false))
                 .build();
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        return ResponseEntity.status(status).body(errorResponse);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -37,23 +36,23 @@ public class TaskService {
     private UserRepository userRepository;
 
     public Task createTask(TaskRequest request, String creatorEmail) {
+        if (request.getProjectId() == null) {
+            throw new CustomApiException("Project ID is required to create a task", 400);
+        }
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new CustomApiException("Project not found", 404));
 
         User assignedTo = null;
-        if (request.getAssigneeEmail() != null) {
+        if (request.getAssigneeEmail() != null && !request.getAssigneeEmail().isBlank()) {
             assignedTo = userRepository.findByEmail(request.getAssigneeEmail())
-                    .orElseThrow(() -> new CustomApiException("Assignee not found", 404));
+                    .orElseThrow(() -> new CustomApiException("Assignee not found: " + request.getAssigneeEmail(), 404));
         }
 
         Task task = new Task();
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
         task.setStatus(TaskStatus.valueOf(request.getStatus()));
-        // Fix: Convert Date to LocalDate
-        if (request.getDueDate() != null) {
-            task.setDueDate(request.getDueDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
-        }
+        task.setDueDate(request.getDueDate());
         task.setProject(project);
         task.setAssignee(assignedTo);
         task.setCreatedAt(LocalDateTime.now());
@@ -66,9 +65,12 @@ public class TaskService {
         String status = statusOpt.orElse(null);
         if (status != null && !status.isEmpty()) {
             return taskRepository.findByProjectIdAndStatus(projectId, status);
-        } else {
-            return taskRepository.findByProjectId(projectId);
         }
+        return taskRepository.findByProjectId(projectId);
+    }
+
+    public List<Task> getTasksForUser(String userEmail) {
+        return taskRepository.findByAssigneeEmail(userEmail);
     }
 
     public Task updateTask(UUID taskId, TaskRequest request, String userEmail) {
@@ -78,37 +80,28 @@ public class TaskService {
         User requestingUser = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new CustomApiException("User not found", 404));
 
-        // Check if user is a member of the project
-        Optional<ProjectMember> memberOpt = projectMemberRepository
-                .findByProjectIdAndUserEmail(task.getProject().getId(), userEmail);
+        boolean isOwner = task.getProject().getOwner().getId().equals(requestingUser.getId());
+        boolean isMember = projectMemberRepository
+                .findByProjectIdAndUserEmail(task.getProject().getId(), userEmail).isPresent();
 
-        // Only allow update if user is a project member with manager role or is the project owner
-        if (memberOpt.isEmpty() &&
-            !task.getProject().getOwner().getEmail().equals(userEmail)) {
+        if (!isOwner && !isMember) {
             throw new CustomApiException("You are not authorized to update this task", 403);
-        }
-
-        // If user is a member, check if they have manager role
-        if (memberOpt.isPresent()) {
-            ProjectMember member = memberOpt.get();
-            Project project = task.getProject();
-
-            boolean isManager = member.getRole() == Role.MANAGER;
-            boolean isOwner = project.getOwner().getId().equals(requestingUser.getId());
-
-            if (!isManager && !isOwner) {
-                throw new CustomApiException("You do not have permission to update this task.", 403);
-            }
         }
 
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
         task.setStatus(TaskStatus.valueOf(request.getStatus()));
+        task.setPriority(request.getPriority());
+        task.setDueDate(request.getDueDate());
 
-        // Convert Date to LocalDate if present
-        if (request.getDueDate() != null) {
-            task.setDueDate(request.getDueDate().toInstant()
-                    .atZone(ZoneId.systemDefault()).toLocalDate());
+        // Update assignee
+        if (request.getAssigneeEmail() != null && !request.getAssigneeEmail().isBlank()
+                && !request.getAssigneeEmail().equals("UNASSIGNED")) {
+            User newAssignee = userRepository.findByEmail(request.getAssigneeEmail())
+                    .orElseThrow(() -> new CustomApiException("Assignee not found: " + request.getAssigneeEmail(), 404));
+            task.setAssignee(newAssignee);
+        } else {
+            task.setAssignee(null);
         }
 
         return taskRepository.save(task);
@@ -121,11 +114,9 @@ public class TaskService {
         User requestingUser = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new CustomApiException("User not found", 404));
 
-        // Only project owner or manager can delete tasks
         Project project = task.getProject();
         boolean isOwner = project.getOwner().getId().equals(requestingUser.getId());
 
-        // Check if user is a member with manager role
         Optional<ProjectMember> memberOpt = projectMemberRepository
                 .findByProjectIdAndUserEmail(project.getId(), userEmail);
 
